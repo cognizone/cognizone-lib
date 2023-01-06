@@ -1,0 +1,116 @@
+plugins {
+  id 'pl.allegro.tech.build.axion-release' version '1.13.3'
+  id 'org.springframework.boot' version '2.6.14' apply false
+  id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+  id 'idea'
+  id 'java'
+  id 'java-library'
+  id 'maven-publish'
+  id "io.freefair.lombok" version "6.5.1"
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  maven { url "https://repo.spring.io/milestone" }
+  maven { url "https://archiva.cogni.zone/repository/public" }
+}
+
+scmVersion {
+  tag {
+    prefix = "v"
+    versionSeparator = ""
+    branchPrefix = [
+            'release/.*': 'release-v',
+            'hotfix/.*' : 'hotfix-v'
+    ]
+    initialVersion = { final tagProperties, final scmPosition -> '0.0.1' }
+  }
+  nextVersion {
+    suffix = "SNAPSHOT"
+    separator = "-"
+  }
+}
+
+ext {
+  //version properties go here
+}
+
+idea {
+  project {
+    jdkName = "11"
+    languageLevel = "11"
+  }
+}
+
+subprojects {
+  apply plugin: 'java'
+  apply plugin: 'idea'
+  apply plugin: "io.freefair.lombok"
+  apply plugin: 'io.spring.dependency-management'
+
+  group = 'zone.cogni.lib'
+  version = scmVersion.version
+  sourceCompatibility = '11'
+
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url "https://repo.spring.io/milestone" }
+    maven { url "https://archiva.cogni.zone/repository/public" }
+  }
+
+  dependencyManagement {
+    imports {
+      mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+    }
+  }
+
+  dependencies {
+    annotationProcessor 'org.projectlombok:lombok'
+    compileOnly 'org.projectlombok:lombok'
+  }
+
+  task sourcesJar(type: Jar) {
+    description = 'Creates sources JAR.'
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+  }
+
+  tasks.named('test') {
+    useJUnitPlatform()
+  }
+}
+
+project("httpheaders") {
+  apply plugin: "maven-publish"
+
+  dependencies {
+    implementation("javax.inject:javax.inject:1")
+
+    // spring
+    implementation('org.springframework.boot:spring-boot-starter-web')
+  }
+
+  publishing {
+    publications {
+      mavenJava(MavenPublication) {
+        groupId = group
+        artifactId = 'httpheaders'
+        version = scmVersion.version
+        from components.java
+        artifact sourcesJar
+      }
+    }
+    repositories {
+      maven {
+        credentials {
+          username = System.properties['archiva.user']
+          password = System.properties['archiva.password']
+        }
+        name = 'public'
+        url = System.properties['archiva.url']
+      }
+    }
+  }
+}
