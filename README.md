@@ -25,6 +25,8 @@ cognizone:
         key: X-My-Server
         value: El serveros
 ```
-At the moment, `type` can only be equal to `plain`.
+_Note 1: `type` can be omitted. If not set default `plain` will be used._
+
+_Note 2: At the moment, `type` can only be equal to `plain`.
 This will just return the value as specified in the configuration.
-In the future types like `spelExpression` and such can be added.
+In the future types like `spelExpression` and such can be added._
