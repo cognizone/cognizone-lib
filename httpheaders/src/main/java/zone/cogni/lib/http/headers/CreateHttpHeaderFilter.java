@@ -8,11 +8,11 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-public class HttpHeaderFilter implements Filter {
+public class CreateHttpHeaderFilter implements Filter {
 
   private final HttpHeadersProperties httpHeadersProperties;
 
-  public HttpHeaderFilter(HttpHeadersProperties httpHeadersProperties) {
+  public CreateHttpHeaderFilter(HttpHeadersProperties httpHeadersProperties) {
     this.httpHeadersProperties = httpHeadersProperties;
   }
 

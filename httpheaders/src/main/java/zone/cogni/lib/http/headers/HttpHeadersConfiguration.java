@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration;
 public class HttpHeadersConfiguration {
 
   @Bean
-  public HttpHeaderFilter httpHeaderFilter() {
-    return new HttpHeaderFilter(httpHeadersProperties());
+  public CreateHttpHeaderFilter httpHeaderFilter() {
+    return new CreateHttpHeaderFilter(httpHeadersProperties());
   }
 
   @Bean
