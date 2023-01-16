@@ -1,3 +1,9 @@
+buildscript {
+  ext {
+    commonsLang3Version = "3.12.0"
+  }
+}
+
 plugins {
   id 'pl.allegro.tech.build.axion-release' version '1.13.3'
   id 'org.springframework.boot' version '2.6.14' apply false
@@ -32,10 +38,6 @@ scmVersion {
   }
 }
 
-ext {
-  //version properties go here
-}
-
 idea {
   project {
     jdkName = "11"
@@ -48,6 +50,7 @@ subprojects {
   apply plugin: 'idea'
   apply plugin: "io.freefair.lombok"
   apply plugin: 'io.spring.dependency-management'
+  apply plugin: "maven-publish"
 
   group = 'zone.cogni.lib'
   version = scmVersion.version
@@ -63,6 +66,9 @@ subprojects {
   dependencyManagement {
     imports {
       mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+    }
+    dependencies {
+      dependency("org.apache.commons:commons-lang3:${commonsLang3Version}")
     }
   }
 
@@ -80,29 +86,8 @@ subprojects {
   tasks.named('test') {
     useJUnitPlatform()
   }
-}
-
-project("httpheaders") {
-  apply plugin: "maven-publish"
-
-  dependencies {
-    implementation("javax.inject:javax.inject:1")
-
-    // spring
-    implementation('org.springframework.boot:spring-boot-starter-web')
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-  }
 
   publishing {
-    publications {
-      mavenJava(MavenPublication) {
-        groupId = group
-        artifactId = 'httpheaders'
-        version = scmVersion.version
-        from components.java
-        artifact sourcesJar
-      }
-    }
     repositories {
       maven {
         credentials {
@@ -113,5 +98,32 @@ project("httpheaders") {
         url = System.properties['archiva.url']
       }
     }
+    publishing {
+      publications {
+        mavenJava(MavenPublication) {
+          groupId = group
+          //artifactId = 'httpheaders'   //it will take the module name -> all fine
+          version = scmVersion.version
+          from components.java
+          artifact sourcesJar
+        }
+      }
+    }
+  }
+}
+
+project("httpheaders") {
+  dependencies {
+    implementation("javax.inject:javax.inject:1")
+    implementation('org.springframework.boot:spring-boot-starter-web')
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+  }
+}
+
+project("methodtimer") {
+  dependencies {
+    implementation("javax.inject:javax.inject:1") //if we don't have this dependency the publication build does not work???
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+    implementation("org.apache.commons:commons-lang3")
   }
 }
