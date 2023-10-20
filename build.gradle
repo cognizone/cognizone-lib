@@ -30,7 +30,7 @@ scmVersion {
             'release/.*': 'release-v',
             'hotfix/.*' : 'hotfix-v'
     ]
-    initialVersion = { final tagProperties, final scmPosition -> '0.0.1' }
+    initialVersion = { t,p -> '0.0.1' }
   }
   nextVersion {
     suffix = "SNAPSHOT"
@@ -57,6 +57,16 @@ subprojects {
   sourceCompatibility = '11'
 
   repositories {
+    if (project.hasProperty('jenkins-ci')) {
+      maven {
+        url "${System.properties['nexus.url']}/repository/cognizone-group"
+        credentials {
+          username = System.properties['nexus.username']
+          password = System.properties['nexus.password']
+        }
+        allowInsecureProtocol(true)
+      }
+    }
     mavenLocal()
     mavenCentral()
     maven { url "https://repo.spring.io/milestone" }
@@ -88,24 +98,35 @@ subprojects {
   }
 
   publishing {
-    repositories {
-      maven {
-        credentials {
-          username = System.properties['archiva.user']
-          password = System.properties['archiva.password']
-        }
-        name = 'public'
-        url = System.properties['archiva.url']
+    publications {
+      mavenJava(MavenPublication) {
+        groupId = group
+        version = scmVersion.version
+        from components.java
+        artifact sourcesJar
       }
     }
-    publishing {
-      publications {
-        mavenJava(MavenPublication) {
-          groupId = group
-          //artifactId = 'httpheaders'   //it will take the module name -> all fine
-          version = scmVersion.version
-          from components.java
-          artifact sourcesJar
+    repositories {
+      if (project.hasProperty("publishToCognizoneArchiva")) {
+        maven {
+          credentials {
+            username = System.properties['archiva.username']
+            password = System.properties['archiva.password']
+          }
+          name = 'cognizone'
+          url = System.properties['archiva.url']
+        }
+      }
+      if (project.hasProperty("publishToCognizoneNexus")) {
+        maven {
+          credentials {
+            username = System.properties['nexus.username']
+            password = System.properties['nexus.password']
+          }
+          def releasesRepoUrl = "${System.properties['nexus.url']}/repository/cognizone-release"
+          def snapshotsRepoUrl = "${System.properties['nexus.url']}/repository/cognizone-snapshot"
+          url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+          allowInsecureProtocol(true)
         }
       }
     }
