@@ -9,6 +9,9 @@ import java.util.TreeSet;
 public class TimerHolder {
   private static final ThreadLocal<Map<String, MethodTime>> timeMap = new ThreadLocal<>();
 
+  //Compare time first then name, if twice same time we don't want the count to get lost so also compare on (unique) name
+  private static final Comparator<MethodTime> methodTimeComparator = Comparator.comparing(MethodTime::getTotalTime).thenComparing(MethodTime::getName);
+
   void registerTime(String name, long time) {
     Map<String, MethodTime> threadTimeMap = timeMap.get();
     if (threadTimeMap.containsKey(name)) {
@@ -19,15 +22,18 @@ public class TimerHolder {
     }
   }
 
+  boolean threadHasTimer() {
+    return timeMap.get() != null;
+  }
   boolean initForThread() {
-    if(timeMap.get() != null) return false;
+    if(threadHasTimer()) return false;
 
     timeMap.set(new HashMap<>());
     return true;
   }
 
   public SortedSet<MethodTime> getTimes() {
-    SortedSet<MethodTime> times = new TreeSet<>(Comparator.comparing(MethodTime::getTotalTime));
+    SortedSet<MethodTime> times = new TreeSet<>(methodTimeComparator);
     times.addAll(timeMap.get().values());
     return times;
   }
