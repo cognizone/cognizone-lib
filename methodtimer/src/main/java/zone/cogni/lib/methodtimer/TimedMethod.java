@@ -15,4 +15,6 @@ public @interface TimedMethod {
    * To specify the name of this timer. If not set, the method name will be used.
    */
   String value() default "";
+
+  boolean canBeParent() default true;
 }

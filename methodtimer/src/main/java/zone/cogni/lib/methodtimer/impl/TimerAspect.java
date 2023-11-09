@@ -20,13 +20,18 @@ import java.util.SortedSet;
 public class TimerAspect {
   private static final int nameBuilderInitSize = 40;
   private final TimerHolder timerHolder;
-  private final TimerReport timerReport;
+  private final TimerReportReference timerReportReference;
 
   @SuppressWarnings("ProhibitedExceptionDeclared")
   @Around("@annotation(timedMethod)")
   public Object trace(ProceedingJoinPoint joinPoint, TimedMethod timedMethod) throws Throwable {
+    if(!timedMethod.canBeParent() && !timerHolder.threadHasTimer()) {
+      //Thread cannot start a timer and no timer started, so just run the stuff and return
+      return joinPoint.proceed();
+    }
+
     String name = getName(joinPoint, timedMethod);
-    boolean initDone = timerHolder.initForThread();
+    boolean initDone = timerHolder.initForThread(); //True if init is done here => aka this method starts the timer => so we need to log and cleanup at the end
     long startTime = System.currentTimeMillis();
     try {
       return joinPoint.proceed();
@@ -40,7 +45,7 @@ public class TimerAspect {
   private void logAndCleanTimer() {
     SortedSet<MethodTime> times = timerHolder.getTimes();
     timerHolder.clearTimes();
-    timerReport.report(times);
+    timerReportReference.getTimerReport().report(times);
   }
 
   private String getName(ProceedingJoinPoint joinPoint, TimedMethod timedMethod) {
