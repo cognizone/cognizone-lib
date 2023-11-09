@@ -120,7 +120,7 @@ subprojects {
           name = "${project.name}"
           packaging = 'jar'
           // optionally artifactId can be defined here
-          description = 'Library for Semantic Development'
+          description = 'Library for various usages.'
           url = 'https://github.com/cognizone/cognizone-lib'
 
           scm {
