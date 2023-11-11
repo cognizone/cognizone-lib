@@ -2,6 +2,7 @@ package zone.cogni.lib.methodtimer.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.function.FailableSupplier;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -14,10 +15,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.SortedSet;
+import java.util.function.Supplier;
 
 @Aspect
 @RequiredArgsConstructor
-public class TimerAspect {
+public class TimerAspect implements TimedMethodRunner {
   private static final int nameBuilderInitSize = 40;
   private final TimerHolder timerHolder;
   private final TimerReportReference timerReportReference;
@@ -25,16 +27,21 @@ public class TimerAspect {
   @SuppressWarnings("ProhibitedExceptionDeclared")
   @Around("@annotation(timedMethod)")
   public Object trace(ProceedingJoinPoint joinPoint, TimedMethod timedMethod) throws Throwable {
-    if(!timedMethod.canBeParent() && !timerHolder.threadHasTimer()) {
+    return runTimedMethod(joinPoint::proceed, () -> getName(joinPoint, timedMethod), timedMethod.canStartTimer());
+  }
+
+  @Override
+  public <T, EX extends Throwable> T runTimedMethod(FailableSupplier<T, EX> supplier, Supplier<String> nameSupplier, boolean canStartTimer) throws EX {
+    if(!canStartTimer && !timerHolder.threadHasTimer()) {
       //Thread cannot start a timer and no timer started, so just run the stuff and return
-      return joinPoint.proceed();
+      return supplier.get();
     }
 
-    String name = getName(joinPoint, timedMethod);
+    String name = nameSupplier.get();
     boolean initDone = timerHolder.initForThread(); //True if init is done here => aka this method starts the timer => so we need to log and cleanup at the end
     long startTime = System.currentTimeMillis();
     try {
-      return joinPoint.proceed();
+      return supplier.get();
     }
     finally {
       timerHolder.registerTime(name, System.currentTimeMillis() - startTime);

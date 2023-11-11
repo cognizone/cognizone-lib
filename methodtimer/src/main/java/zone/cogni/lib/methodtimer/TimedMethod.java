@@ -16,5 +16,8 @@ public @interface TimedMethod {
    */
   String value() default "";
 
-  boolean canBeParent() default true;
+  /**
+   * Put to false so this method will only be timed if a timer is already running in the current thread.
+   */
+  boolean canStartTimer() default true;
 }
